@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# inputs and outputs of the analyses (not distributed)
+/data/
+/figures/

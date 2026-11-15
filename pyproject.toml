@@ -1,0 +1,94 @@
+[project]
+name = "disentangling-novelty-in-sun"
+version = "0.1.0"
+description = "Analysis code for 'Disentangling compositional and prototype novelty in thermodynamic stability benchmarks for crystal generative models'"
+readme = "README.md"
+license = "MIT"
+requires-python = "==3.12.*"
+# Direct imports of scripts/analysis, plus the packages that the lemat-genbench
+# modules loaded by analysis_3/evaluate_generated.py need (fingerprinting and
+# validity only). lemat-genbench itself is read from the git submodule
+# external/lemat-genbench, not installed.
+dependencies = [
+    "numpy==2.2.3",
+    "pandas==2.3.1",
+    "scipy==1.16.0",
+    "matplotlib==3.11.2",
+    "pyyaml==6.0.3",
+    "pymatgen==2025.6.14",
+    "smact==3.2.0",
+    "spglib==2.6.0",
+    # lemat-genbench fingerprinting / validity
+    "material-hasher",
+    "moyopy==0.21.0",
+    "average-minimum-distance==1.6.1",
+    "structuregraph-helpers==0.0.9",
+    "networkx==3.5",
+    "pyarrow==21.0.0",
+    "rich==13.9.4",
+    "tqdm==4.67.1",
+]
+
+[tool.uv]
+package = false
+# material-hasher declares torch and datasets, but only its BAWL hasher is
+# used, which needs neither. Drop them so the environment stays CPU-only.
+override-dependencies = [
+    "torch; sys_platform == 'never'",
+    "datasets; sys_platform == 'never'",
+]
+# Versions of the environment that produced the figures of the paper.
+constraint-dependencies = [
+    "ase==3.29.0",
+    "bibtexparser==2.1.0",
+    "certifi==2026.7.22",
+    "charset-normalizer==3.5.2",
+    "click==8.5.0",
+    "cloudpickle==3.1.2",
+    "contourpy==1.4.0",
+    "cycler==0.12.1",
+    "dill==0.4.1",
+    "fonttools==4.67.0",
+    "gemmi==0.7.5",
+    "idna==3.20",
+    "joblib==1.6.0",
+    "kiwisolver==1.5.1",
+    "llvmlite==0.50.0",
+    "loguru==0.7.3",
+    "markdown-it-py==4.2.0",
+    "mdurl==0.1.2",
+    "monty==2026.7.16",
+    "mpmath==1.3.0",
+    "multiprocess==0.70.19",
+    "narwhals==2.27.1",
+    "numba==0.68.0",
+    "orjson==3.13.0",
+    "packaging==26.3",
+    "palettable==3.3.3",
+    "pandarallel==1.6.5",
+    "pathos==0.3.5",
+    "pillow==13.0.0",
+    "plotly==7.1.0",
+    "pox==0.3.7",
+    "ppft==1.7.8",
+    "psutil==7.2.2",
+    "pygments==2.21.0",
+    "pylatexenc==2.11",
+    "pyparsing==3.3.3",
+    "python-dateutil==2.9.0.post0",
+    "pytz==2026.5",
+    "requests==2.34.2",
+    "ruamel-yaml==0.19.1",
+    "scikit-learn==1.9.1",
+    "six==1.17.0",
+    "sympy==1.14.0",
+    "tabulate==0.10.0",
+    "threadpoolctl==3.7.0",
+    "typing-extensions==4.16.0",
+    "tzdata==2026.5",
+    "uncertainties==3.2.3",
+    "urllib3==2.8.0",
+]
+
+[tool.uv.sources]
+material-hasher = { git = "https://github.com/lematerial/material-hasher.git", rev = "c9c6bd0bf694a7fb8b489e6a772e3e0f5f52b133" }
