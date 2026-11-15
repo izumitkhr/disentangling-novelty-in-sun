@@ -5,7 +5,7 @@ Code for reproducing the analyses in *Disentangling compositional and prototype 
 Python 3.12 and [uv](https://docs.astral.sh/uv/).
 
 ```sh
-git clone --recurse-submodules <repository URL>
+git clone --recurse-submodules https://github.com/izumitkhr/disentangling-novelty-in-sun.git
 cd disentangling-novelty-in-sun
 uv sync --locked    # analysis environment in .venv
 ```
