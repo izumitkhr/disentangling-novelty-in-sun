@@ -260,10 +260,14 @@ def main() -> int:
     ap.add_argument("--cache", type=Path, default=CACHE)
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--workers", type=int, default=os.cpu_count() or 1)
-    ap.add_argument("--plot-only", action="store_true")
+    ap.add_argument(
+        "--from-cache",
+        action="store_true",
+        help="reuse the cached E_d instead of recomputing",
+    )
     args = ap.parse_args()
 
-    if args.plot_only:
+    if args.from_cache:
         df = pd.read_csv(args.cache)
     else:
         df = compute(args.workers)
