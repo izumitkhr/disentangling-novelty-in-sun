@@ -1,0 +1,3 @@
+[submodule "external/lemat-genbench"]
+	path = external/lemat-genbench
+	url = https://github.com/LeMaterial/lemat-genbench.git
