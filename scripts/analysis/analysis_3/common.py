@@ -156,12 +156,10 @@ def masks(df: pd.DataFrame, validity: str = "smact") -> dict[str, pd.Series]:
     return out
 
 
-def summarize_steps(
-    df: pd.DataFrame, validity: str = "smact", generators=GENERATORS
-) -> pd.DataFrame:
+def summarize_steps(df: pd.DataFrame, validity: str = "smact") -> pd.DataFrame:
     """Class mix of the structures left after each filtering step."""
     rows = []
-    for gen in generators:
+    for gen in GENERATORS:
         g = df[df.generator == gen]
         for step, m in masks(g, validity).items():
             s = g[m]

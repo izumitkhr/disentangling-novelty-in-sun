@@ -89,21 +89,16 @@ def categorize(df: pd.DataFrame, split_p1: bool) -> pd.Series:
     return pd.Series(out, index=df.index)
 
 
-def summarize_steps(
-    ev: pd.DataFrame,
-    validity: str,
-    proto: dict = PROTO,
-    generators: dict = cm.GENERATORS,
-) -> pd.DataFrame:
+def summarize_steps(ev: pd.DataFrame, proto: dict = PROTO) -> pd.DataFrame:
     """Prototype novelty shares of the structures left after each
     filtering step."""
     rows = []
-    for gen in generators:
+    for gen in cm.GENERATORS:
         g = ev[ev.generator == gen]
         n_gen = len(g)
         g = g[g.novel_prototype.notna()].copy()
         g["proto"] = categorize(g, "new_p1" in proto)
-        for step, m in cm.masks(g, validity).items():
+        for step, m in cm.masks(g).items():
             s = g[m]
             for p in proto:
                 n = int((s.proto == p).sum())
@@ -121,13 +116,11 @@ def summarize_steps(
     return pd.DataFrame(rows)
 
 
-def summarize_nelements(
-    d: pd.DataFrame, proto: dict = PROTO, generators: dict = cm.GENERATORS
-) -> pd.DataFrame:
+def summarize_nelements(d: pd.DataFrame, proto: dict = PROTO) -> pd.DataFrame:
     """Prototype novelty shares of the E_d structures per number of
     elements."""
     rows = []
-    for gen in generators:
+    for gen in cm.GENERATORS:
         g = d[d.generator == gen]
         for nel in cm.NEL_LABELS:
             s = g[g.nelements == nel]
@@ -147,15 +140,10 @@ def summarize_nelements(
     return pd.DataFrame(rows)
 
 
-def ed_stats(
-    d: pd.DataFrame,
-    mp: np.ndarray,
-    proto: dict = PROTO,
-    generators: dict = cm.GENERATORS,
-) -> pd.DataFrame:
+def ed_stats(d: pd.DataFrame, mp: np.ndarray, proto: dict = PROTO) -> pd.DataFrame:
     groups = [("mp_experimental", "all", mp)] + [
         (g, p, d.loc[(d.generator == g) & (d.proto == p), "ed_meV"].to_numpy())
-        for g in generators
+        for g in cm.GENERATORS
         for p in proto
     ]
     return pd.DataFrame(
@@ -212,26 +200,18 @@ def funnel_panel(ax, st, gen, left_labels, rows=cm.STEPS, proto=PROTO):
     ax.set_yticks(y, [rows[s] for s in steps] if left_labels else [])
 
 
-def plot(
-    steps,
-    nel,
-    d,
-    mp,
-    out: Path,
-    proto: dict = PROTO,
-    generators: dict = cm.GENERATORS,
-) -> list[Path]:
+def plot(steps, nel, d, mp, out: Path, proto: dict = PROTO) -> list[Path]:
     split = "new_p1" in proto
     colors = PROTO_P1_COLORS if split else PROTO_COLORS
     st = steps.set_index(["generator", "step", "prototype"])
     sn = nel.set_index(["generator", "step", "prototype"])
     fig, grid = plt.subplots(
         3,
-        len(generators),
+        len(cm.GENERATORS),
         figsize=ps.figsize("double", height=5.8),
         height_ratios=[1.05, 0.6, 1],
     )
-    for j, (gen, label) in enumerate(generators.items()):
+    for j, (gen, label) in enumerate(cm.GENERATORS.items()):
         funnel_panel(grid[0, j], st, gen, j == 0, proto=proto)
         grid[0, j].set_title(label)
         funnel_panel(grid[1, j], sn, gen, j == 0, cm.NEL_LABELS, proto)
@@ -250,12 +230,10 @@ def plot(
             else:
                 cm.ed_cdf(ax, v, color=colors[p], **LINE_KW)
         cm.ed_axes(ax, ylabel=j == 0)
-    # x labels under the middle column, or under every column if even
-    n = len(generators)
-    for j in [n // 2] if n % 2 else range(n):
-        grid[0, j].set_xlabel("Prototype novelty share (%)")
-        grid[1, j].set_xlabel("Prototype novelty share of VUN structures (%)")
-        grid[2, j].set_xlabel("Decomposition energy (meV/atom)")
+    # x labels under the middle column
+    grid[0, 1].set_xlabel("Prototype novelty share (%)")
+    grid[1, 1].set_xlabel("Prototype novelty share of VUN structures (%)")
+    grid[2, 1].set_xlabel("Decomposition energy (meV/atom)")
     grid[2, 0].set_ylabel("Cumulative fraction (%)")
     handles = [
         Patch(facecolor=colors[p], label=label) for p, label in proto.items()
@@ -299,7 +277,7 @@ def main() -> int:
     proto = PROTO_P1 if args.split_p1 else PROTO
 
     ev = cm.read_table(args.evaluation)
-    steps = summarize_steps(ev, "smact", proto)
+    steps = summarize_steps(ev, proto)
     d = cm.load_vun_ed(args.evaluation)
     d = d[d.novel_prototype.notna()].copy()
     d["proto"] = categorize(d, args.split_p1)

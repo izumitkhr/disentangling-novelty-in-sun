@@ -95,12 +95,10 @@ def stacked_panel(ax, st, gen, rows, labels, left_labels):
     ax.set_yticks(y, [labels[s] for s in steps] if left_labels else [])
 
 
-def summarize_nelements(
-    d: pd.DataFrame, generators=cm.GENERATORS
-) -> pd.DataFrame:
+def summarize_nelements(d: pd.DataFrame) -> pd.DataFrame:
     """Class mix of the E_d structures per number of elements."""
     rows = []
-    for gen in generators:
+    for gen in cm.GENERATORS:
         g = d[d.generator == gen]
         for nel in cm.NEL_LABELS:
             s = g[g.nelements == nel]
@@ -120,9 +118,7 @@ def summarize_nelements(
     return pd.DataFrame(rows)
 
 
-def ed_stats(
-    d: pd.DataFrame, mp: np.ndarray, generators=cm.GENERATORS
-) -> pd.DataFrame:
+def ed_stats(d: pd.DataFrame, mp: np.ndarray) -> pd.DataFrame:
     rows = [{"generator": "mp_experimental", "group": "all", "values": mp}] + [
         {
             "generator": g,
@@ -131,7 +127,7 @@ def ed_stats(
                 (d.generator == g) & (d.novelty_class_vs_mp == c), "ed_meV"
             ].to_numpy(),
         }
-        for g in generators
+        for g in cm.GENERATORS
         for c in cm.CLASSES
     ]
     out = []

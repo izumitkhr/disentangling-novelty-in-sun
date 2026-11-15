@@ -14,7 +14,7 @@ stable) and V-MSUN (metastable) structures by cell. E_hull against the
 full MACE-OMAT-0 MP reference (analysis_2).
 
 The panels of Figure 6 (cell shares, stable and metastable fractions) are
-drawn by draw(), which analysis_6/compare_mattergen.py uses.
+drawn by draw(), which analysis_6/make_figure6.py uses.
 
 Input:  data/analysis_3/evaluation.csv.gz (analysis_3/evaluate_generated.py)
 Output: figures/analysis_5/novelty_cells_stats.csv  rates with intervals
@@ -119,12 +119,11 @@ def load(path: Path) -> pd.DataFrame:
     return ev
 
 
-def composition(
-    vun: pd.DataFrame, generators: dict = cm.GENERATORS
-) -> pd.DataFrame:
+def composition(vun: pd.DataFrame) -> pd.DataFrame:
+    """Novelty cells of the V-SUN and V-MSUN structures per generator."""
     rows = []
     for m, label in SETS.items():
-        for gen in generators:
+        for gen in cm.GENERATORS:
             s = vun[(vun.generator == gen) & vun[m].eq(1)]
             for cell, share in cm.shares(s).items():
                 if cell == cm.NOT_NOVEL:
@@ -180,9 +179,9 @@ def dot_panel(ax, st, m, ypos, rows):
         raise ValueError(f"{m}: interval up to {top:.1f} % > {XMAX[m]}")
 
 
-def legend(fig, with_markers: bool = True, one_row: bool = False):
-    """Class colors, then known / new prototype (marker and bar); on two
-    rows, or on one row with ``one_row``."""
+def legend(fig):
+    """One row on top of ``fig``: class colors, then known / new prototype
+    (marker and bar)."""
     class_handles = [
         Patch(facecolor=cm.CLASS_COLORS[c], label=cm.CLASS_LABELS[c])
         for c in cm.CLASSES
@@ -200,36 +199,21 @@ def legend(fig, with_markers: bool = True, one_row: bool = False):
     )
     bar_known = Patch(**cm.style("0.35", True))
     bar_new = Patch(**cm.style("0.35", False))
-    known = (marker_known, bar_known) if with_markers else bar_known
-    new = (marker_new, bar_new) if with_markers else bar_new
-    # two rows: classes on the first, prototype on the second (legend
-    # entries fill column by column, so interleave them)
-    labels = [h.get_label() for h in class_handles]
-    handles = [
-        class_handles[0],
-        known,
-        class_handles[1],
-        new,
-        class_handles[2],
+    handles = class_handles + [
+        (marker_known, bar_known),
+        (marker_new, bar_new),
     ]
-    labels = [
-        labels[0],
+    labels = [h.get_label() for h in class_handles] + [
         "Known prototype",
-        labels[1],
         "New prototype",
-        labels[2],
     ]
-    if one_row:
-        order = [0, 2, 4, 1, 3]
-        handles = [handles[i] for i in order]
-        labels = [labels[i] for i in order]
     leg = fig.legend(
         handles=handles,
         labels=labels,
         handler_map={tuple: HandlerTuple(ndivide=None, pad=0.6)},
         loc="outside upper center",
-        ncol=len(handles) if one_row else 3,
-        handlelength=2.2 if with_markers else 1.4,
+        ncol=len(handles),
+        handlelength=2.2,
         handleheight=1.0,
         handletextpad=0.4,
         columnspacing=1.0,
@@ -239,29 +223,17 @@ def legend(fig, with_markers: bool = True, one_row: bool = False):
         raise ValueError("Legend is wider than the figure")
 
 
-def plot(
-    vun: pd.DataFrame,
-    rates: pd.DataFrame,
-    out: Path,
-    generators: dict = cm.GENERATORS,
-) -> list[Path]:
-    fig = plt.figure(figsize=ps.figsize("double", height=5.85))
-    draw(fig, vun, rates, generators)
-    return ps.savefig(fig, out)
-
-
 def draw(
     fig,
     vun: pd.DataFrame,
     rates: pd.DataFrame,
     generators: dict = cm.GENERATORS,
     panel_labels: list[str] | None = None,
-    top_legend: bool = True,
     name_offset: float = 82,
 ) -> tuple:
-    """Draw (a)-(c) of Figure 6 on ``fig`` (a Figure or a SubFigure);
-    returns the axes of (a), (b), (c). ``name_offset``: distance (pt) of
-    the generator names left of (b)."""
+    """Draw (a)-(c) of Figure 6 on ``fig`` (a Figure or a SubFigure),
+    without a legend (legend() adds it); returns the axes of (a), (b), (c).
+    ``name_offset``: distance (pt) of the generator names left of (b)."""
     st = rates.set_index(["generator", "novelty_class_vs_mp", "prototype"])
     # the empty middle row separates (a) from the titles of (b), (c)
     gs = fig.add_gridspec(3, 2, height_ratios=[0.75, 0.1, 2.3])
@@ -316,67 +288,8 @@ def draw(
             va="center",
             rotation=90,
         )
-    # top legend: classes and the bar style of (a); markers of (b), (c) in
-    # the empty lower right of (b)
-    if top_legend:
-        legend(fig, with_markers=False)
-    ax_b.legend(
-        handles=[
-            Line2D(
-                [],
-                [],
-                ls="none",
-                marker="o",
-                ms=4.5,
-                color="0.35",
-                label="Known prototype",
-            ),
-            Line2D(
-                [],
-                [],
-                ls="none",
-                marker="o",
-                ms=4.5,
-                mfc="white",
-                mec="0.35",
-                mew=1.2,
-                label="New prototype",
-            ),
-        ],
-        loc="lower right",
-        frameon=True,
-        handletextpad=0.3,
-        borderpad=0.4,
-        labelspacing=0.3,
-    )
     ps.label_panels((ax_a, ax_b, ax_c), panel_labels, x=0.0, y=1.02)
     return ax_a, ax_b, ax_c
-
-
-def plot_supl(
-    vun: pd.DataFrame, out: Path, generators: dict = cm.GENERATORS
-) -> list[Path]:
-    """Supplement: V-SUN and V-MSUN structures by novelty cell."""
-    fig, axes = plt.subplots(
-        1, 2, figsize=ps.figsize("double", height=2.0), sharey=True
-    )
-    gens = list(generators)
-    for j, (ax, (m, label)) in enumerate(zip(axes, SETS.items())):
-        sel = [vun[(vun.generator == g) & vun[m].eq(1)] for g in gens]
-        cm.stacked(
-            ax,
-            [cm.shares(s) for s in sel],
-            # the y axis is shared: the same labels on both panels (empty
-            # labels on the right would blank the left), hidden on the right
-            [generators[g] for g in gens],
-            [f"{len(s)}" for s in sel],
-        )
-        if j:
-            ax.tick_params(axis="y", labelleft=False)
-        ax.set_xlabel(f"{label} structures (%)")
-    legend(fig, with_markers=False)
-    ps.label_panels(axes, x=0.0, y=1.02)
-    return ps.savefig(fig, out)
 
 
 def main() -> int:
